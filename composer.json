@@ -1,0 +1,14 @@
+{
+    "name": "mongoose/mongoose-events",
+    "description": "Event management plugin",
+    "type": "wordpress-plugin",
+    "authors": [
+        {
+            "name": "DDEV User",
+            "email": "nobody@example.com"
+        }
+    ],
+    "require": {
+        "yahnis-elsts/plugin-update-checker": "^5.6"
+    }
+}
