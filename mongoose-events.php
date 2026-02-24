@@ -28,7 +28,6 @@ $mongoose_events_updater = PucFactory::buildUpdateChecker(
     'mongoose-events'
 );
 $mongoose_events_updater->setBranch( 'main' );
-$mongoose_events_updater->setAuthentication( defined( 'MONGOOSE_EVENTS_GITHUB_TOKEN' ) ? MONGOOSE_EVENTS_GITHUB_TOKEN : '' );
 
 Mongoose_Events::instance();
 
