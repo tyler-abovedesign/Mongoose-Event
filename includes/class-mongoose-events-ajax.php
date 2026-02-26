@@ -15,52 +15,29 @@ class Mongoose_Events_AJAX {
     }
 
     /**
-     * AJAX endpoint: returns filtered event cards + available months.
+     * AJAX endpoint: returns filtered event cards.
      */
     public function handle_filter() {
         check_ajax_referer( 'mongoose_events_nonce', 'nonce' );
 
         $event_type = isset( $_POST['event_type'] ) ? sanitize_text_field( $_POST['event_type'] ) : 'all';
-        $month      = isset( $_POST['month'] ) ? sanitize_text_field( $_POST['month'] ) : '';
         $per_page   = isset( $_POST['per_page'] ) ? absint( $_POST['per_page'] ) : 12;
         $show_past  = isset( $_POST['show_past'] ) && $_POST['show_past'] === '1';
-        $archive    = isset( $_POST['archive'] ) && $_POST['archive'] === '1';
 
         $args = [
             'post_type'      => 'mongoose_event',
             'posts_per_page' => $per_page,
             'meta_key'       => 'event_date',
             'orderby'        => 'meta_value',
-            'order'          => $archive ? 'DESC' : 'ASC',
+            'order'          => 'ASC',
             'meta_query'     => [],
         ];
 
-        // Archive mode: only past events.
-        if ( $archive ) {
-            $args['meta_query'][] = [
-                'key'     => 'event_date',
-                'value'   => gmdate( 'Ymd' ),
-                'compare' => '<',
-                'type'    => 'NUMERIC',
-            ];
-        } elseif ( ! $show_past ) {
-            // Default: exclude past events.
+        if ( ! $show_past ) {
             $args['meta_query'][] = [
                 'key'     => 'event_date',
                 'value'   => gmdate( 'Ymd' ),
                 'compare' => '>=',
-                'type'    => 'NUMERIC',
-            ];
-        }
-
-        // Filter by month (YYYY-MM).
-        if ( $month && preg_match( '/^\d{4}-\d{2}$/', $month ) ) {
-            $start = str_replace( '-', '', $month ) . '01';
-            $end   = str_replace( '-', '', $month ) . '31';
-            $args['meta_query'][] = [
-                'key'     => 'event_date',
-                'value'   => [ $start, $end ],
-                'compare' => 'BETWEEN',
                 'type'    => 'NUMERIC',
             ];
         }
@@ -80,16 +57,8 @@ class Mongoose_Events_AJAX {
 
         ob_start();
         if ( $query->have_posts() ) {
-            $current_month = '';
             while ( $query->have_posts() ) {
                 $query->the_post();
-                $date_raw   = get_field( 'event_date', get_the_ID() );
-                $event_month = $date_raw ? substr( $date_raw, 0, 6 ) : '';
-                if ( $event_month && $event_month !== $current_month ) {
-                    $current_month = $event_month;
-                    $heading_label = date_i18n( 'F Y', strtotime( $date_raw ) );
-                    echo '<h3 class="mw-el-month-heading">' . esc_html( $heading_label ) . '</h3>';
-                }
                 echo self::render_event_card( get_the_ID() );
             }
             wp_reset_postdata();
@@ -98,12 +67,8 @@ class Mongoose_Events_AJAX {
         }
         $html = ob_get_clean();
 
-        // Build available months from all matching events (ignoring month filter).
-        $months = self::get_available_months( $event_type, $show_past, $archive );
-
         wp_send_json_success( [
-            'html'   => $html,
-            'months' => $months,
+            'html' => $html,
         ] );
     }
 
@@ -196,7 +161,7 @@ class Mongoose_Events_AJAX {
             $location_icon    = 'eicon-map-pin';
         } elseif ( 'online' === $location_type ) {
             $location_display = 'Online';
-            $location_icon    = 'eicon-device-desktop';
+            $location_icon    = 'fa fa-wifi';
         }
 
         $tag        = $event_url ? 'a' : 'div';
@@ -229,72 +194,4 @@ class Mongoose_Events_AJAX {
         return ob_get_clean();
     }
 
-    /**
-     * Get available months for the sidebar.
-     *
-     * @param string $event_type Taxonomy slug or "all".
-     * @param bool   $show_past  Whether to include past events.
-     * @param bool   $archive    Whether in archive mode (past only).
-     * @return array Array of { value, label } objects.
-     */
-    private static function get_available_months( $event_type, $show_past, $archive = false ) {
-        $args = [
-            'post_type'      => 'mongoose_event',
-            'posts_per_page' => -1,
-            'meta_key'       => 'event_date',
-            'orderby'        => 'meta_value',
-            'order'          => $archive ? 'DESC' : 'ASC',
-            'fields'         => 'ids',
-            'meta_query'     => [],
-        ];
-
-        if ( $archive ) {
-            $args['meta_query'][] = [
-                'key'     => 'event_date',
-                'value'   => gmdate( 'Ymd' ),
-                'compare' => '<',
-                'type'    => 'NUMERIC',
-            ];
-        } elseif ( ! $show_past ) {
-            $args['meta_query'][] = [
-                'key'     => 'event_date',
-                'value'   => gmdate( 'Ymd' ),
-                'compare' => '>=',
-                'type'    => 'NUMERIC',
-            ];
-        }
-
-        if ( 'all' !== $event_type ) {
-            $args['tax_query'] = [
-                [
-                    'taxonomy' => 'event_type',
-                    'field'    => 'slug',
-                    'terms'    => $event_type,
-                ],
-            ];
-        }
-
-        $ids    = get_posts( $args );
-        $months = [];
-        $seen   = [];
-
-        foreach ( $ids as $id ) {
-            $date_raw = get_field( 'event_date', $id );
-            if ( ! $date_raw ) {
-                continue;
-            }
-            $ym = substr( $date_raw, 0, 4 ) . '-' . substr( $date_raw, 4, 2 );
-            if ( isset( $seen[ $ym ] ) ) {
-                continue;
-            }
-            $seen[ $ym ] = true;
-            $timestamp   = strtotime( $date_raw );
-            $months[]    = [
-                'value' => $ym,
-                'label' => date_i18n( 'F Y', $timestamp ),
-            ];
-        }
-
-        return $months;
-    }
 }
