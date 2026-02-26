@@ -180,7 +180,7 @@ class Mongoose_Events_AJAX {
                 <?php if ( $date_display ) : ?>
                     <span class="mw-el-card__date"><i class="eicon-calendar mw-el-card__date-icon"></i> <?php echo esc_html( $date_display ); ?></span>
                 <?php endif; ?>
-                <h3 class="mw-el-card__title"><?php echo esc_html( $title ); ?></h3>
+                <h5 class="mw-el-card__title"><?php echo esc_html( $title ); ?></h5>
                 <?php if ( $description ) : ?>
                     <p class="mw-el-card__description"><?php echo $description; ?></p>
                 <?php endif; ?>

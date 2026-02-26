@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Mongoose Events
  * Description: Event management with custom post type, taxonomy, ACF fields, and AJAX filtering.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Mongoose
  * Text Domain: mongoose-events
  * Requires Plugins: advanced-custom-fields
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'MONGOOSE_EVENTS_VERSION', '1.1.0' );
+define( 'MONGOOSE_EVENTS_VERSION', '1.2.0' );
 define( 'MONGOOSE_EVENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'MONGOOSE_EVENTS_URL', plugin_dir_url( __FILE__ ) );
 
